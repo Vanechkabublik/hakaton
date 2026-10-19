@@ -31,6 +31,9 @@ final class ErrorRenderer
         if ($e instanceof ValidationException) {
             return $this->validation($e, $request);
         }
+        if ($e instanceof \DomainException) {
+            return $this->userError($e->getMessage(), $request);
+        }
         if ($e instanceof HttpException) {
             if ($e->status >= 500) {
                 $this->logger->error($e->getMessage(), ['exception' => $e, 'uri' => $request->uri()]);
@@ -51,9 +54,20 @@ final class ErrorRenderer
         }
         $this->session->flashInput($request->all(), $e->errors);
         $this->session->flash('error', $e->first());
-        $target = $e->redirectTo ?? $this->localReferer($request) ?? '/';
+        $target = $e->redirectTo ?? $this->localReferer($request) ?? $request->path();
 
         return Response::redirect($target);
+    }
+
+    /** Ожидаемая бизнес-ошибка (DomainException): показываем пользователю как есть. */
+    private function userError(string $message, Request $request): Response
+    {
+        if ($request->expectsJson()) {
+            return Response::json(['ok' => false, 'message' => $message], 422);
+        }
+        $this->session->flash('error', $message);
+
+        return Response::redirect($this->localReferer($request) ?? '/');
     }
 
     private function localReferer(Request $request): ?string

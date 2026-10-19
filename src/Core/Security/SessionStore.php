@@ -60,6 +60,15 @@ final class SessionStore
         );
     }
 
+    /** @return list<array{id:string,ip:?string,user_agent:?string,last_activity:int,created_at:string}> */
+    public function listForUser(int $userId): array
+    {
+        return $this->db->fetchAll(
+            'SELECT id, ip, user_agent, last_activity, created_at FROM sessions WHERE user_id = :u ORDER BY last_activity DESC',
+            ['u' => $userId]
+        );
+    }
+
     public function gc(int $maxIdleSeconds): int
     {
         return $this->db->execute('DELETE FROM sessions WHERE last_activity < :min', ['min' => time() - $maxIdleSeconds]);

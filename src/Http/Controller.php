@@ -100,6 +100,7 @@ abstract class Controller
 
     protected function meta(PageMeta $meta): void
     {
+        $this->ctx->composer->compose($this->ctx->requestContext->request());
         $this->ctx->view->share('meta', $meta);
     }
 

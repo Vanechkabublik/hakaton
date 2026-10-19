@@ -92,7 +92,7 @@ final class PaywallService
     {
         $this->db->execute(
             "INSERT INTO paywall_events (identity, user_id, article_id, event)
-             SELECT :i, :u, :a, 'shown'
+             SELECT :i::varchar, :u::bigint, :a::bigint, 'shown'
               WHERE NOT EXISTS (SELECT 1 FROM paywall_events WHERE identity = :i AND article_id = :a AND event = 'shown' AND created_at > now() - interval '1 day')",
             ['i' => $visitor->key(), 'u' => $visitor->userId, 'a' => $article->id]
         );

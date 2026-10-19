@@ -36,6 +36,11 @@ final class PageMeta
         return $this;
     }
 
+    public function noindexIf(bool $condition): self
+    {
+        return $condition ? $this->noindex() : $this;
+    }
+
     /** @param array<string,mixed> $block */
     public function addJsonLd(array $block): self
     {

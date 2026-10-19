@@ -143,9 +143,10 @@ final class ArticleRepository extends Repository
             $where[] = 'a.author_id = :author';
             $params['author'] = $criteria->authorId;
         }
-        if ($criteria->excludeId !== null) {
-            $where[] = 'a.id <> :exclude';
-            $params['exclude'] = $criteria->excludeId;
+        if ($criteria->excludeIds !== []) {
+            [$in, $exParams] = Database::in('ex', $criteria->excludeIds);
+            $where[] = "a.id NOT IN {$in}";
+            $params += $exParams;
         }
         if ($criteria->onlyFree) {
             $where[] = "a.access = 'free'";

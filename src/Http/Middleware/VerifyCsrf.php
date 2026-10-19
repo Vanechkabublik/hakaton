@@ -14,7 +14,7 @@ use App\Core\Security\Csrf;
 final class VerifyCsrf implements Middleware
 {
     /** Пути без CSRF: вебхуки внешних сервисов и анонимные счётчики. */
-    private const EXCEPT = ['/webhooks/', '/api/track/'];
+    private const EXCEPT = ['/webhooks/', '/api/track/', '/unsubscribe/'];
 
     public function __construct(private readonly Csrf $csrf)
     {

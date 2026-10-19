@@ -15,7 +15,8 @@ final class FeedCriteria
         public readonly array $tagSlugs = [],
         public readonly ?ArticleType $type = null,
         public readonly ?int $authorId = null,
-        public readonly ?int $excludeId = null,
+        /** @var list<int> */
+        public readonly array $excludeIds = [],
         public readonly bool $onlyFree = false,
     ) {
     }

@@ -204,6 +204,18 @@ final class Session
         $this->store->deleteForUser($userId, $exceptCurrent && $this->id !== '' ? Crypto::hashToken($this->id) : null);
     }
 
+    /** Хеш текущей сессии (для отметки «это устройство» в списке). */
+    public function currentHash(): ?string
+    {
+        return $this->id !== '' ? Crypto::hashToken($this->id) : null;
+    }
+
+    /** @return list<array{id:string,ip:?string,user_agent:?string,last_activity:int,created_at:string}> */
+    public function listUserSessions(int $userId): array
+    {
+        return $this->store->listForUser($userId);
+    }
+
     private function secureCookies(Request $request): bool
     {
         return $request->isSecure() || str_starts_with($this->config->appUrl(), 'https://');

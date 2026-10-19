@@ -37,6 +37,8 @@ final class SettingsRegistry
             new SettingDefinition('site.description', 'general', 'Описание сайта (для поисковиков)', 'textarea', 'Новости, аналитика и лонгриды. Подписка открывает все материалы.'),
             new SettingDefinition('site.logo', 'general', 'Логотип', 'image', '', null, 'PNG/SVG/WebP, отображается в шапке и письмах'),
             new SettingDefinition('site.contact_email', 'general', 'Контактный email', 'text', '', 'CONTACT_EMAIL'),
+            new SettingDefinition('site.legal_name', 'general', 'Юридическое лицо / ИП (для квитанций)', 'text', '', null, 'Отображается на квитанциях об оплате'),
+            new SettingDefinition('site.inn', 'general', 'ИНН', 'text', ''),
             // SEO
             new SettingDefinition('seo.title_template', 'seo', 'Шаблон <title> страниц', 'text', '{title} — {site}', null, 'Подстановки: {title}, {site}'),
             new SettingDefinition('seo.article_title_template', 'seo', 'Шаблон <title> статей', 'text', '{title} | {site}', null, 'Подстановки: {title}, {site}, {category}'),

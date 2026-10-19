@@ -17,6 +17,6 @@ final class ValidationException extends RuntimeException
 
     public function first(): string
     {
-        return (string) (reset($this->errors) ?: 'Проверьте введённые данные');
+        return (string) (array_values($this->errors)[0] ?? 'Проверьте введённые данные');
     }
 }
