@@ -10,20 +10,28 @@ COPY src ./src
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --ignore-platform-reqs
 
 # ---------------------------------------------------------------------------------------------
-# Стадия 2. Рабочий образ: один и тот же образ запускается как php-fpm (app) и как воркер (worker)
+# Стадия 2. Рабочий образ: один и тот же образ запускается как php-fpm (app) и как воркер (worker).
+# PHP ставится готовыми пакетами Alpine — ничего не компилируется, сборка занимает около минуты.
 # ---------------------------------------------------------------------------------------------
-FROM php:8.3-fpm-alpine AS app
+FROM alpine:3.21 AS app
 
-COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
-
-# fcgi — для healthcheck php-fpm; postgresql-client — pg_dump для бэкапов; su-exec — запуск консоли от www-data
-RUN apk add --no-cache fcgi postgresql-client su-exec tzdata \
-    && install-php-extensions pdo_pgsql gd intl opcache pcntl zip bcmath gmp
+# fcgi — для healthcheck php-fpm; postgresql16-client — pg_dump для бэкапов; su-exec — запуск консоли от www-data
+RUN apk add --no-cache \
+        php83 php83-fpm php83-opcache php83-pdo php83-pdo_pgsql php83-pgsql php83-gd php83-intl php83-zip \
+        php83-bcmath php83-gmp php83-sodium php83-mbstring php83-curl php83-dom php83-openssl php83-ctype \
+        php83-iconv php83-fileinfo php83-tokenizer php83-xml php83-xmlreader php83-xmlwriter php83-simplexml \
+        php83-session php83-posix php83-phar php83-pcntl \
+        postgresql16-client fcgi su-exec tzdata \
+    && ln -sf /usr/bin/php83 /usr/bin/php \
+    && ln -sf /usr/sbin/php-fpm83 /usr/sbin/php-fpm \
+    && addgroup -g 82 -S www-data \
+    && adduser -u 82 -D -S -G www-data -h /var/www www-data
 
 WORKDIR /var/www/html
 
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
-COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/php/php.ini /etc/php83/conf.d/zz-app.ini
+COPY docker/php/php-fpm.conf /etc/php83/php-fpm.conf
+COPY docker/php/www.conf /etc/php83/php-fpm.d/www.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 COPY docker/console.sh /usr/local/bin/console
 
