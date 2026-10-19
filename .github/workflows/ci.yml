@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP (lint + тесты)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: news_test
+          POSTGRES_USER: news
+          POSTGRES_PASSWORD: news
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U news -d news_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      APP_ENV: testing
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_NAME: news_test
+      DB_USER: news
+      DB_PASSWORD: news
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_pgsql, gd, intl, mbstring, sodium, curl, dom, bcmath, gmp, pcntl, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Кэш Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer validate --no-check-publish
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Синтаксис PHP
+        run: composer lint
+
+      - name: Тесты
+        run: vendor/bin/phpunit
+
+  docker:
+    name: Docker (сборка + конфигурация)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: compose-файл валиден
+        run: |
+          cp .env.example .env
+          sed -i 's/^ACME_EMAIL=$/ACME_EMAIL=ops@example.com/; s/^DB_PASSWORD=$/DB_PASSWORD=ci-password/' .env
+          docker compose config --quiet
+
+      - name: Caddyfile валиден
+        run: |
+          docker run --rm \
+            -e DOMAIN=news.example.com -e ACME_EMAIL=ops@example.com \
+            -e ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory \
+            -v "$PWD/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+
+      - name: deploy.sh — синтаксис
+        run: bash -n deploy.sh
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Сборка образа приложения
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: app
+          push: false
+          load: true
+          tags: news-app:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Образ содержит нужные расширения и pg_dump
+        run: |
+          docker run --rm --entrypoint php news-app:ci -r '
+            foreach (["pdo_pgsql","gd","intl","sodium","mbstring","curl","dom","opcache","pcntl","zip"] as $e) {
+              if (!extension_loaded($e)) { fwrite(STDERR, "нет расширения $e\n"); exit(1); }
+            }
+            $info = gd_info();
+            if (empty($info["WebP Support"]) || empty($info["JPEG Support"])) { fwrite(STDERR, "gd без WebP/JPEG\n"); exit(1); }
+          '
+          docker run --rm --entrypoint pg_dump news-app:ci --version

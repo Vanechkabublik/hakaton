@@ -1,0 +1,79 @@
+# Caddy — единственная точка входа: сам получает и продлевает сертификаты Let's Encrypt
+# для {$DOMAIN}, редиректит HTTP → HTTPS, отдаёт статику и проксирует PHP в php-fpm.
+{
+	email {$ACME_EMAIL}
+	acme_ca {$ACME_CA}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Каталог public приложения смонтирован по тому же пути, что и в контейнере app
+	root * /var/www/html/public
+
+	request_body {
+		max_size 20MB
+	}
+
+	# Caddy — внешний прокси, поэтому присланным клиентом заголовкам о «настоящем» IP и схеме верить нельзя
+	request_header -X-Forwarded-For
+	request_header -X-Forwarded-Proto
+	request_header -X-Forwarded-Host
+	request_header -X-Real-IP
+
+	header {
+		-Server
+		-X-Powered-By
+		X-Content-Type-Options nosniff
+	}
+
+	# Скрытые файлы и каталоги недоступны (кроме /.well-known/)
+	@dotfiles {
+		path /.*
+		not path /.well-known/*
+	}
+	handle @dotfiles {
+		respond 404
+	}
+
+	# Загрузки редакции (WebP/JPEG/PNG). sandbox в CSP исключает исполнение скриптов из SVG при прямом открытии
+	handle /uploads/* {
+		uri strip_prefix /uploads
+		root * /var/www/html/storage/uploads
+		header Cache-Control "public, max-age=2592000"
+		header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+		file_server
+	}
+
+	# CSS/JS подключаются с ?v=<mtime>, поэтому версионированные файлы можно кэшировать навсегда
+	handle /assets/* {
+		@versioned query v=*
+		header @versioned Cache-Control "public, max-age=31536000, immutable"
+		@plain {
+			not query v=*
+		}
+		header @plain Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	# Service Worker не должен кэшироваться, иначе обновления не доедут до пользователей
+	handle /sw.js {
+		header Cache-Control "no-cache"
+		header Service-Worker-Allowed "/"
+		file_server
+	}
+
+	# Всё остальное — фронт-контроллер PHP
+	handle {
+		php_fastcgi app:9000 {
+			root /var/www/html/public
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
