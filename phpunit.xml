@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         beStrictAboutOutputDuringTests="true">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <!-- Тесты интеграции пересоздают схему БД: имя базы обязано оканчиваться на _test -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_DEBUG" value="0" force="true"/>
+        <env name="APP_URL" value="http://localhost" force="true"/>
+        <env name="APP_TIMEZONE" value="Europe/Moscow" force="true"/>
+        <env name="DB_NAME" value="news_test" force="true"/>
+        <env name="LOG_CHANNELS" value="" force="true"/>
+        <!-- Внешние сервисы в тестах не используются -->
+        <env name="MAIL_HOST" value="" force="true"/>
+        <env name="YOOKASSA_SHOP_ID" value="" force="true"/>
+        <env name="YOOKASSA_SECRET_KEY" value="" force="true"/>
+        <env name="YANDEX_CLIENT_ID" value="" force="true"/>
+        <env name="YANDEX_CLIENT_SECRET" value="" force="true"/>
+        <env name="VAPID_PUBLIC_KEY" value="" force="true"/>
+        <env name="VAPID_PRIVATE_KEY" value="" force="true"/>
+        <env name="ADMIN_EMAIL" value="" force="true"/>
+        <env name="ADMIN_PASSWORD" value="" force="true"/>
+    </php>
+</phpunit>

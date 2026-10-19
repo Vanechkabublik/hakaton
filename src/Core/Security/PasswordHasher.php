@@ -6,6 +6,9 @@ namespace App\Core\Security;
 
 final class PasswordHasher
 {
+    private const DUMMY_ARGON2ID = '$argon2id$v=19$m=65536,t=4,p=1$ZDhyWFJZOGQ5dXd4TEYvUQ$wKDPJQMIkw3Z3/KcmeBtpy+0wrstAaOh2Fvo2ovzVLc';
+    private const DUMMY_BCRYPT = '$2y$12$abcdefghijklmnopqrstuuG3iTr6w6hDk0F2s3GJdU7sFQh2uYoPW';
+
     public function hash(string $password): string
     {
         return password_hash($password, $this->algorithm());
@@ -27,7 +30,8 @@ final class PasswordHasher
      */
     public function dummyVerify(string $password): void
     {
-        password_verify($password, '$2y$12$abcdefghijklmnopqrstuuG3iTr6w6hDk0F2s3GJdU7sFQh2uYoPW');
+        // Хеш того же алгоритма и стоимости, что и у настоящих паролей, — время проверки не отличается
+        password_verify($password, defined('PASSWORD_ARGON2ID') ? self::DUMMY_ARGON2ID : self::DUMMY_BCRYPT);
     }
 
     private function algorithm(): string

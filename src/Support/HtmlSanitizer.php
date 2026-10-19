@@ -64,7 +64,7 @@ final class HtmlSanitizer
             $out .= $dom->saveHTML($child);
         }
         // Пустые абзацы, оставшиеся после чистки
-        $out = preg_replace('#<p>(\s|&nbsp;|<br\s*/?>)*</p>#i', '', $out) ?? $out;
+        $out = preg_replace('#<p>(\s|&nbsp;|\x{00A0}|<br\s*/?>)*</p>#iu', '', $out) ?? $out;
 
         return trim($out);
     }
