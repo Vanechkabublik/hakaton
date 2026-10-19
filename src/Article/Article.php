@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Article;
 
 use App\Core\Database\Entity;
+use App\Support\HtmlText;
 use DateTimeImmutable;
 
 final class Article extends Entity
@@ -111,7 +112,7 @@ final class Article extends Entity
             return $text;
         }
 
-        return rtrim(mb_substr($text, 0, $length - 1), " ,.;:–-") . '…';
+        return HtmlText::trimTrailingPunctuation(mb_substr($text, 0, $length - 1)) . '…';
     }
 
     /** Отображаемая дата публикации (запланированная/фактическая/создания). */

@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Article\ContentPreview;
 use App\Article\ReadingTime;
 use App\Support\Format;
+use App\Support\HtmlText;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -66,5 +67,26 @@ final class TextTest extends TestCase
     public function testPreviewNeverLeaksPremiumTextWhenFewParagraphs(): void
     {
         $this->assertSame('<p>Единственный</p>', ContentPreview::paragraphs('<p>Единственный</p>', 5));
+    }
+
+    public function testTruncationNeverBreaksCyrillicLetters(): void
+    {
+        // «р» в UTF-8 — байты D1 80; rtrim() с многобайтовой маской отрезал бы 0x80 и ломал строку
+        $text = str_repeat('Ставки растут вместе с ценой на нефть, ', 10) . 'главный вывод — не торопиться с масштабированием, но смотреть на опыт коллег';
+        for ($length = 40; $length < 160; ++$length) {
+            $article = new \App\Article\Article();
+            $article->lead = $text;
+            $excerpt = $article->excerpt($length);
+            $this->assertTrue(mb_check_encoding($excerpt, 'UTF-8'), "Битый UTF-8 при длине {$length}: {$excerpt}");
+            $this->assertStringEndsWith('…', $excerpt);
+        }
+    }
+
+    public function testTrimTrailingPunctuation(): void
+    {
+        $this->assertSame('Привет', HtmlText::trimTrailingPunctuation('Привет, – '));
+        $this->assertSame('Мир', HtmlText::trimTrailingPunctuation('Мир—'));
+        $this->assertSame('кубер', HtmlText::trimTrailingPunctuation('кубер'), 'Буква «р» остаётся целой');
+        $this->assertSame('', HtmlText::trimTrailingPunctuation(' ,.; '));
     }
 }

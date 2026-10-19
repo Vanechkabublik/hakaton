@@ -215,4 +215,26 @@ final class PublicSiteTest extends IntegrationTestCase
 
         $this->assertStringContainsString('Тестовое издание', $this->get('/')->body());
     }
+
+    public function testHeroIsToppedUpWithLatestWhenFewArticlesAreFeatured(): void
+    {
+        $repository = $this->c->get(\App\Article\ArticleRepository::class);
+        $pinned = $this->fx->article(['slug' => 'pinned', 'is_featured' => true, 'published_at' => new \DateTimeImmutable('-5 days')]);
+        for ($i = 1; $i <= 4; ++$i) {
+            $this->fx->article(['slug' => "fresh-{$i}", 'published_at' => new \DateTimeImmutable("-{$i} hours")]);
+        }
+
+        $featured = $repository->featured(3);
+
+        $this->assertCount(3, $featured);
+        $this->assertSame('pinned', $featured[0]->slug, 'Закреплённый идёт первым');
+        $this->assertSame(['fresh-1', 'fresh-2'], [$featured[1]->slug, $featured[2]->slug]);
+        $this->assertCount(3, array_unique(array_map(static fn ($a): int => $a->id, $featured)));
+        $this->assertSame($pinned->id, $featured[0]->id);
+    }
+
+    public function testHeroWithNothingPublishedIsEmpty(): void
+    {
+        $this->assertSame([], $this->c->get(\App\Article\ArticleRepository::class)->featured(3));
+    }
 }

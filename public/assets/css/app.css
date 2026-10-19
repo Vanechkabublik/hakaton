@@ -216,7 +216,7 @@ button { font: inherit; }
 .page-heading h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: .25rem; }
 .page-title { font-size: clamp(1.7rem, 4vw, 2.4rem); margin: 2rem 0 1rem; }
 .hero { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 1.5rem 0; }
-@media (min-width: 900px) { .hero { grid-template-columns: 1.7fr 1fr; } }
+@media (min-width: 900px) { .hero:has(.hero-side) { grid-template-columns: 1.7fr 1fr; } }
 .hero-side { display: grid; gap: 20px; align-content: start; }
 .layout-sidebar { display: grid; gap: 32px; padding-top: 1.25rem; }
 @media (min-width: 1000px) { .layout-sidebar { grid-template-columns: minmax(0, 1fr) 320px; } }
@@ -259,6 +259,10 @@ button { font: inherit; }
 .chip-tag { font-weight: 500; }
 .tag-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; margin: 1.5rem 0; }
 .feed-grid.is-loading { opacity: .5; transition: opacity .15s; }
+/* Блоки «Читайте также»: ровные ряды (до 4 карточек), без одинокой карточки в последней строке */
+.related-grid { grid-template-columns: 1fr; }
+@media (min-width: 640px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .related-grid { grid-template-columns: repeat(4, 1fr); } }
 .feed-more { text-align: center; margin: 2rem 0; }
 .feed-end, .empty-state { text-align: center; padding: 1.5rem 0; }
 .empty-state { background: var(--surface); border-radius: var(--radius); }

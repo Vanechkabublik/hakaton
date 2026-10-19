@@ -89,7 +89,7 @@ body.admin { background: var(--surface); }
 .kpi-sub { margin-top: .25rem; font-size: .82rem; color: var(--muted); }
 .chart-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); margin-bottom: 1.25rem; }
 @media (max-width: 560px) { .chart-grid { grid-template-columns: 1fr; } }
-.chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem 1.1rem; --viz-1: #2a78d6; --viz-grid: color-mix(in srgb, var(--text) 10%, transparent); --viz-axis: var(--muted); }
+.chart-card { margin: 0; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem 1.1rem; --viz-1: #2a78d6; --viz-grid: color-mix(in srgb, var(--text) 10%, transparent); --viz-axis: var(--muted); }
 :root[data-theme="dark"] .chart-card { --viz-1: #3987e5; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chart-card { --viz-1: #3987e5; } }
 .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: .5rem; }

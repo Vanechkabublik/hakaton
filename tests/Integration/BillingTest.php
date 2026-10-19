@@ -647,4 +647,18 @@ final class BillingTest extends IntegrationTestCase
         $this->expectException(\DomainException::class);
         $this->c->get(SubscriptionService::class)->grantManual($this->fx->user(), $this->fx->plan(), new DateTimeImmutable('-1 day'), $this->fx->admin());
     }
+
+    public function testTrialOverHttpReturnsReaderToTheArticleThatHitTheWall(): void
+    {
+        $article = $this->fx->article(['access' => 'digital', 'slug' => 'wall-article']);
+        $plan = $this->fx->plan(['trial_days' => 7]);
+        $this->fx->user(['email' => 'trialist@example.test']);
+        $this->loginAs('trialist@example.test', \Tests\Support\Fixtures::PASSWORD);
+
+        $this->get('/subscribe', ['from' => $article->id]);
+        $response = $this->post('/subscribe/trial/' . $plan->id, [], '/subscribe');
+
+        $this->assertRedirectTo('/news/wall-article', $response);
+        $this->assertSame(1, (int) $this->db->fetchValue("SELECT count(*) FROM subscriptions WHERE status = 'trialing'"));
+    }
 }

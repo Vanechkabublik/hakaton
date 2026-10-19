@@ -155,16 +155,24 @@ final class ArticleRepository extends Repository
         return [$where, $params];
     }
 
-    /** Закреплённые материалы для главной. */
+    /** Закреплённые материалы для главной; если закреплено меньше $limit, блок добирается самыми свежими. */
     public function featured(int $limit = 3): array
     {
-        $rows = $this->db->fetchAll(
-            'SELECT ' . self::COLUMNS . ', left(a.body, 600) AS body, ' . self::RELATED_COLUMNS . ' ' . self::JOINS
-            . ' WHERE ' . self::PUBLISHED . ' AND a.is_featured ORDER BY a.published_at DESC LIMIT :l',
+        $select = 'SELECT ' . self::COLUMNS . ', left(a.body, 600) AS body, ' . self::RELATED_COLUMNS . ' ' . self::JOINS;
+        $items = Article::fromRows($this->db->fetchAll(
+            $select . ' WHERE ' . self::PUBLISHED . ' AND a.is_featured ORDER BY a.published_at DESC LIMIT :l',
             ['l' => $limit]
-        );
+        ));
+        if (count($items) >= $limit) {
+            return $items;
+        }
+        [$in, $params] = Database::in('feat', array_map(static fn (Article $a): int => $a->id, $items));
+        $fill = Article::fromRows($this->db->fetchAll(
+            $select . ' WHERE ' . self::PUBLISHED . ' AND a.id NOT IN ' . $in . ' ORDER BY a.published_at DESC LIMIT :l',
+            $params + ['l' => $limit - count($items)]
+        ));
 
-        return Article::fromRows($rows);
+        return array_merge($items, $fill);
     }
 
     /** Популярное за последние дни по просмотрам. */

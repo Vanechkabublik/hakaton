@@ -7,6 +7,7 @@ namespace App\Core\View;
 use App\Core\Config;
 use App\Core\Router;
 use App\Support\Format;
+use App\Support\HtmlText;
 use DateTimeInterface;
 use RuntimeException;
 use Throwable;
@@ -296,7 +297,7 @@ final class View
         $cut = mb_substr($text, 0, $length);
         $space = mb_strrpos($cut, ' ');
 
-        return rtrim($space !== false && $space > $length * 0.6 ? mb_substr($cut, 0, $space) : $cut, " ,.;:–-") . $suffix;
+        return HtmlText::trimTrailingPunctuation($space !== false && $space > $length * 0.6 ? mb_substr($cut, 0, $space) : $cut) . $suffix;
     }
 
     /** @param array<string,mixed> $attrs */

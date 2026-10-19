@@ -38,6 +38,15 @@ final class HtmlText
         return trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
     }
 
+    /**
+     * Срезает хвостовую пунктуацию и пробелы. Не rtrim() с маской: тот работает по байтам и «съедает»
+     * последний байт кириллической «р» (D1 80) и других букв, если в маске есть многобайтовое тире.
+     */
+    public static function trimTrailingPunctuation(string $text): string
+    {
+        return preg_replace('/[\s,.;:–—-]+$/u', '', $text) ?? $text;
+    }
+
     public static function wordCount(string $html): int
     {
         $text = self::strip($html);

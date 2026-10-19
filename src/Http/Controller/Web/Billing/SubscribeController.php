@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Web\Billing;
 
+use App\Article\ArticleRepository;
 use App\Billing\CheckoutService;
-use App\Billing\PaymentKind;
 use App\Billing\Plan;
 use App\Billing\PlanRepository;
 use App\Billing\PlanTier;
@@ -24,6 +24,7 @@ final class SubscribeController extends Controller
 {
     public function __construct(
         private readonly PlanRepository $plans,
+        private readonly ArticleRepository $articles,
         private readonly CheckoutService $checkout,
         private readonly SubscriptionService $subscriptions,
         private readonly PaywallService $paywall,
@@ -143,9 +144,11 @@ final class SubscribeController extends Controller
         $plan = $this->plan($id);
         $sub = $this->subscriptions->startTrial($user, $plan);
         $this->flash('success', 'Пробный период активирован до ' . \App\Support\Format::date($sub->currentPeriodEnd) . '. Приятного чтения!');
-        $article = $this->session->pull('paywall_article');
+        // Вернуть читателя к статье, на которой он упёрся в пейволл
+        $articleId = $this->session->pull('paywall_article');
+        $article = is_int($articleId) ? $this->articles->find($articleId) : null;
 
-        return $this->redirect('/account/subscription');
+        return $this->redirect($article !== null && $article->isPublished() ? $article->url() : '/account/subscription');
     }
 
     private function plan(int $id): Plan

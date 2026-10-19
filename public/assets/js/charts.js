@@ -55,6 +55,7 @@
         var plotH = height - m.t - m.b;
         var n = series.length;
         var max = niceMax(Math.max.apply(null, series.map(function (p) { return p.value; }).concat([0])));
+        if (format === 'money' && max < 40000) { max = 40000; } // пустой график выручки: шкала 0–400 ₽, а не 0–0,04 ₽
         var step = n > 1 ? plotW / (n - (type === 'bar' ? 0 : 1)) : plotW;
 
         container.innerHTML = '';
@@ -73,13 +74,19 @@
             text.textContent = formatTick(value, format);
             root.appendChild(text);
         }
-        // подписи оси X: до 6 штук
+        // подписи оси X: не чаще, чем позволяет ширина (минимум 64px между подписями), последняя — всегда
         var every = Math.max(1, Math.ceil(n / 6));
-        series.forEach(function (p, i) {
-            if (i % every !== 0 && i !== n - 1) { return; }
-            if (i === n - 1 && (n - 1) % every !== 0 && (n - 1) - (Math.floor((n - 1) / every) * every) < every / 2) { return; }
+        var labelIdx = [];
+        series.forEach(function (p, i) { if (i % every === 0) { labelIdx.push(i); } });
+        if (labelIdx[labelIdx.length - 1] !== n - 1) { labelIdx.push(n - 1); }
+        var minGap = 64;
+        var kept = [];
+        for (var k = labelIdx.length - 1; k >= 0; k--) { // идём с конца: последняя подпись приоритетнее
+            if (!kept.length || Math.abs(x(kept[kept.length - 1]) - x(labelIdx[k])) >= minGap) { kept.push(labelIdx[k]); }
+        }
+        kept.reverse().forEach(function (i) {
             var tx = svg('text', { class: 'axis-text', x: x(i), y: height - 6, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle' });
-            tx.textContent = formatDate(p.date);
+            tx.textContent = formatDate(series[i].date);
             root.appendChild(tx);
         });
 

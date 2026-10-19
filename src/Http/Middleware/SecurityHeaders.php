@@ -8,7 +8,6 @@ use App\Core\Config;
 use App\Core\Http\Middleware;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
-use App\Core\Security\Crypto;
 
 /** Заголовки безопасности и CSP с nonce для inline-скриптов. */
 final class SecurityHeaders implements Middleware

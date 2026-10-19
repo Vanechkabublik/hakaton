@@ -6,7 +6,6 @@ namespace App\Billing;
 
 use App\Audit\AuditLog;
 use App\Billing\Gateway\GatewayPayment;
-use App\Billing\Gateway\GatewayRefund;
 use App\Billing\Gateway\PaymentGateway;
 use App\Core\Config;
 use App\Core\Database\Database;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Core\Container;
 use App\Core\Database\Database;
 use App\Core\Queue\Job;
 use App\Core\Queue\Queue;

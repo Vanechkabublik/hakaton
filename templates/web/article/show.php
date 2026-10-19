@@ -188,14 +188,14 @@ $shareUrlEnc = rawurlencode($shareUrl);
     <?php if ($related !== []): ?>
         <section class="container related" aria-labelledby="related-title">
             <h2 id="related-title" class="section-title">Читайте также</h2>
-            <div class="feed-grid"><?php foreach ($related as $item): ?><?= $this->partial('partials/article-card', ['article' => $item, 'variant' => 'default']) ?><?php endforeach; ?></div>
+            <div class="feed-grid related-grid"><?php foreach ($related as $item): ?><?= $this->partial('partials/article-card', ['article' => $item, 'variant' => 'default']) ?><?php endforeach; ?></div>
         </section>
     <?php endif; ?>
 
     <?php if ($moreLikeThis !== []): ?>
         <section class="container related" aria-labelledby="more-title">
             <h2 id="more-title" class="section-title">Связанные материалы</h2>
-            <div class="feed-grid"><?php foreach ($moreLikeThis as $item): ?><?= $this->partial('partials/article-card', ['article' => $item, 'variant' => 'default']) ?><?php endforeach; ?></div>
+            <div class="feed-grid related-grid"><?php foreach ($moreLikeThis as $item): ?><?= $this->partial('partials/article-card', ['article' => $item, 'variant' => 'default']) ?><?php endforeach; ?></div>
         </section>
     <?php endif; ?>
 

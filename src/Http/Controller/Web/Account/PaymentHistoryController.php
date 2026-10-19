@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controller\Web\Account;
 
 use App\Billing\PaymentRepository;
-use App\Billing\PlanRepository;
 use App\Core\Config;
 use App\Core\Http\Request;
 use App\Core\Http\Response;

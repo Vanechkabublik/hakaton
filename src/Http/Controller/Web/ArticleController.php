@@ -7,7 +7,6 @@ namespace App\Http\Controller\Web;
 use App\Analytics\ViewTracker;
 use App\Article\Article;
 use App\Article\ArticleRepository;
-use App\Article\ArticleStatus;
 use App\Article\ArticleType;
 use App\Article\GalleryRepository;
 use App\Article\LiveEntryRepository;
