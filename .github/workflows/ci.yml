@@ -108,3 +108,55 @@ jobs:
             if (empty($info["WebP Support"]) || empty($info["JPEG Support"])) { fwrite(STDERR, "gd без WebP/JPEG\n"); exit(1); }
           '
           docker run --rm --entrypoint pg_dump news-app:ci --version
+
+  stack:
+    name: Стек целиком (docker compose up)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Подготовить .env для localhost (Caddy выпустит локальный сертификат)
+        run: |
+          cp .env.example .env
+          sed -i \
+            -e 's|^DOMAIN=.*|DOMAIN=localhost|' \
+            -e 's|^APP_URL=.*|APP_URL=https://localhost|' \
+            -e 's|^ACME_EMAIL=.*|ACME_EMAIL=ci@example.com|' \
+            -e 's|^DB_PASSWORD=.*|DB_PASSWORD=ci-password|' \
+            -e "s|^APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|" \
+            -e 's|^ADMIN_EMAIL=.*|ADMIN_EMAIL=admin@example.test|' \
+            -e 's|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=CiAdminPass2026|' \
+            .env
+
+      - name: Собрать и поднять стек (миграции применяются при старте)
+        run: docker compose up -d --build --wait --wait-timeout 300
+
+      - name: Сайт отвечает по HTTPS
+        run: |
+          for path in / /robots.txt /sitemap.xml /rss.xml /login /subscribe /assets/css/app.css /assets/js/core.js /sw.js; do
+            code=$(curl -ksS --retry 10 --retry-delay 3 --retry-all-errors -o /dev/null -w '%{http_code}' "https://localhost${path}")
+            echo "${path} -> ${code}"
+            [ "${code}" = "200" ] || exit 1
+          done
+          curl -ksS https://localhost/ | grep -q 'Новости'
+          # HTTP редиректит на HTTPS
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://localhost/)" = "308"
+          # скрытые файлы и несуществующие страницы не отдаются
+          test "$(curl -ksS -o /dev/null -w '%{http_code}' https://localhost/.env)" = "404"
+          test "$(curl -ksS -o /dev/null -w '%{http_code}' https://localhost/no-such-page)" = "404"
+
+      - name: Миграции и начальные данные применены, администратор создан
+        run: |
+          docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from migrations"' | grep -qv '^0$'
+          docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select role from users where email = '"'"'admin@example.test'"'"'"' | grep -q admin
+          docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from plans"' | grep -q '^4$'
+
+      - name: Воркер работает, консоль и бэкап доступны
+        run: |
+          docker compose exec -T app console schedule:run
+          docker compose exec -T app console backup
+          docker compose exec -T app sh -c 'ls storage/backups/*.sql.gz'
+
+      - name: Логи при падении
+        if: failure()
+        run: docker compose ps -a; docker compose logs --tail=120
