@@ -7,7 +7,7 @@
 #   ./deploy.sh --staging         тестовый центр сертификации Let's Encrypt (для проб; браузеры ему не доверяют)
 #   ./deploy.sh --production      вернуться на боевой Let's Encrypt
 #   ./deploy.sh --install-docker  установить Docker, если его нет (нужен root)
-#   ./deploy.sh --behind-proxy[=8081]  порты 80/443 заняты другим сайтом: стек слушает только 127.0.0.1:8081,
+#   ./deploy.sh --behind-proxy[=8082]  порты 80/443 заняты другим сайтом: стек слушает только 127.0.0.1:8082,
 #                                 а HTTPS и сертификат даёт ваш веб-сервер (nginx/Caddy/Apache) — конфиг покажем
 #   ./deploy.sh --standalone      вернуть режим по умолчанию (Caddy сам на 80/443 и сам выпускает сертификат)
 #
@@ -24,7 +24,7 @@ PRODUCTION_CA="https://acme-v02.api.letsencrypt.org/directory"
 PULL=1
 INSTALL_DOCKER=0
 PROXY_REQUEST=""
-PROXY_PORT=8081
+PROXY_PORT=8082
 ACME_MODE=""
 FIRST_RUN=0
 
@@ -201,7 +201,13 @@ port_owner() {
 }
 
 # Если наш Caddy уже запущен (повторный деплой) — порты заняты им самим, это нормально
-if ! docker compose ps --status running --services 2>/dev/null | grep -qx caddy; then
+our_caddy_running() {
+    local id
+    id="$(docker compose ps -q caddy 2>/dev/null | head -n1)"
+    [[ -n "$id" && "$(docker inspect -f '{{.State.Running}}' "$id" 2>/dev/null)" == "true" ]]
+}
+
+if ! our_caddy_running; then
     busy=0
     http_bind="$(env_get HTTP_BIND)"
     https_bind="$(env_get HTTPS_BIND)"
