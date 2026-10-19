@@ -156,6 +156,36 @@ if [[ "$DOMAIN" != "localhost" && "$DOMAIN" != *.localhost ]]; then
     fi
 fi
 
+# ---- 4a. Порты 80/443 свободны ----------------------------------------------------------------
+
+# Порт занят, если к нему удаётся подключиться (встроенными средствами bash, без ss/netstat)
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+
+port_owner() {
+    if command -v ss >/dev/null 2>&1; then
+        ss -ltnp "sport = :$1" 2>/dev/null | tail -n +2
+    elif command -v lsof >/dev/null 2>&1; then
+        lsof -nP -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | tail -n +2
+    fi
+}
+
+# Если наш Caddy уже запущен (повторный деплой) — порты заняты им самим, это нормально
+if ! docker compose ps --status running --services 2>/dev/null | grep -qx caddy; then
+    busy=0
+    http_port="$(env_get HTTP_PORT)"
+    https_port="$(env_get HTTPS_PORT)"
+    for port in "${http_port:-80}" "${https_port:-443}"; do
+        if port_busy "$port"; then
+            warn "Порт $port уже занят на этом сервере:"
+            port_owner "$port" >&2 || true
+            busy=1
+        fi
+    done
+    if ((busy)); then
+        die "Освободите порты 80 и 443 (обычно это nginx или apache: «systemctl disable --now nginx apache2») и запустите ./deploy.sh снова. Эти порты должен слушать Caddy — он выпускает SSL-сертификат."
+    fi
+fi
+
 # ---- 5. Сборка и запуск -----------------------------------------------------------------------
 
 log "Собираю образы"
