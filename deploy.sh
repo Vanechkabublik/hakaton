@@ -22,7 +22,6 @@ PULL=1
 INSTALL_DOCKER=0
 ACME_MODE=""
 FIRST_RUN=0
-GENERATED_ADMIN_PASSWORD=""
 
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m ✓\033[0m %s\n' "$*"; }
@@ -117,13 +116,12 @@ if [[ ! -f .env ]]; then
     ask ADMIN_EMAIL "Email администратора сайта" "$ACME_EMAIL"
     [[ "$ADMIN_EMAIL" =~ ^[^@[:space:]\|\&\\]+@[^@[:space:]\|\&\\]+\.[^@[:space:]\|\&\\]+$ ]] || die "Некорректный ADMIN_EMAIL"
 
-    GENERATED_ADMIN_PASSWORD="$(random_hex 10)Aa1"
     env_set DOMAIN "$DOMAIN"
     env_set APP_URL "https://$DOMAIN"
     env_set ACME_EMAIL "$ACME_EMAIL"
     env_set CONTACT_EMAIL "$ADMIN_EMAIL"
     env_set ADMIN_EMAIL "$ADMIN_EMAIL"
-    env_set ADMIN_PASSWORD "$GENERATED_ADMIN_PASSWORD"
+    env_set ADMIN_PASSWORD "$(random_hex 10)Aa1"
     env_set DB_PASSWORD "$(random_hex 24)"
     env_set APP_KEY "base64:$(openssl rand -base64 32)"
     ok ".env создан, секреты сгенерированы"
@@ -198,11 +196,16 @@ echo
 docker compose ps
 echo
 ok "Готово: https://$DOMAIN/    админка: https://$DOMAIN/admin"
-if ((FIRST_RUN)); then
+# Пароль администратора лежит в .env, пока вы не удалите строку ADMIN_PASSWORD (показываем и при повторных запусках,
+# например если первый запуск прервался на сборке образа)
+ADMIN_PASSWORD_IN_ENV="$(env_get ADMIN_PASSWORD)"
+if [[ -n "$ADMIN_PASSWORD_IN_ENV" ]]; then
     echo
     echo "  Администратор:  $(env_get ADMIN_EMAIL)"
-    echo "  Пароль:         $GENERATED_ADMIN_PASSWORD"
-    echo "  (сохранён в .env — после первого входа смените пароль и удалите строку ADMIN_PASSWORD)"
+    echo "  Пароль:         $ADMIN_PASSWORD_IN_ENV"
+    echo "  (из файла .env — после первого входа смените пароль в кабинете и удалите строку ADMIN_PASSWORD из .env)"
+fi
+if ((FIRST_RUN)); then
     echo
     echo "  Дальше в админке («Настройки»): ключи ЮKassa, SMTP, Яндекс ID. Подробности — README.md"
 fi

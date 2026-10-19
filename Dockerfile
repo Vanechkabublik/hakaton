@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ---------------------------------------------------------------------------------------------
 # Стадия 1. Зависимости Composer (без dev-пакетов, с оптимизированным автозагрузчиком)
 # ---------------------------------------------------------------------------------------------
@@ -16,7 +14,7 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --ignore
 # ---------------------------------------------------------------------------------------------
 FROM php:8.3-fpm-alpine AS app
 
-COPY --from=mlocati/docker-php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
 
 # fcgi — для healthcheck php-fpm; postgresql-client — pg_dump для бэкапов; su-exec — запуск консоли от www-data
 RUN apk add --no-cache fcgi postgresql-client su-exec tzdata \
