@@ -15,6 +15,7 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --ignore
 # ---------------------------------------------------------------------------------------------
 FROM alpine:3.21 AS app
 
+# Группа www-data (gid 82) уже есть в базовом образе Alpine, создаём только пользователя.
 # fcgi — для healthcheck php-fpm; postgresql16-client — pg_dump для бэкапов; su-exec — запуск консоли от www-data
 RUN apk add --no-cache \
         php83 php83-fpm php83-opcache php83-pdo php83-pdo_pgsql php83-pgsql php83-gd php83-intl php83-zip \
@@ -24,7 +25,6 @@ RUN apk add --no-cache \
         postgresql16-client fcgi su-exec tzdata \
     && ln -sf /usr/bin/php83 /usr/bin/php \
     && ln -sf /usr/sbin/php-fpm83 /usr/sbin/php-fpm \
-    && addgroup -g 82 -S www-data \
     && adduser -u 82 -D -S -G www-data -h /var/www www-data
 
 WORKDIR /var/www/html
