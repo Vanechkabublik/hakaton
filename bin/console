@@ -1,0 +1,10 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use App\Core\Application;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+exit((new Application(dirname(__DIR__)))->console()->run($argv));
