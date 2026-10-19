@@ -101,7 +101,7 @@ jobs:
       - name: Образ содержит нужные расширения и pg_dump
         run: |
           docker run --rm --entrypoint php news-app:ci -r '
-            foreach (["pdo_pgsql","gd","intl","sodium","mbstring","curl","dom","opcache","pcntl","zip"] as $e) {
+            foreach (["pdo_pgsql","gd","intl","sodium","mbstring","curl","dom","Zend OPcache","pcntl","zip","bcmath","gmp"] as $e) {
               if (!extension_loaded($e)) { fwrite(STDERR, "нет расширения $e\n"); exit(1); }
             }
             $info = gd_info();
