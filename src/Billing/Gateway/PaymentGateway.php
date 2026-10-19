@@ -19,4 +19,12 @@ interface PaymentGateway
 
     /** @throws PaymentGatewayException */
     public function getRefund(string $id): GatewayRefund;
+
+    /**
+     * Проверка ключей: возвращает данные магазина.
+     *
+     * @return array<string,mixed>
+     * @throws PaymentGatewayException
+     */
+    public function testConnection(): array;
 }

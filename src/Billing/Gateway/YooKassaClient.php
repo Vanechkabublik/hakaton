@@ -78,6 +78,11 @@ final class YooKassaClient implements PaymentGateway
         return GatewayRefund::fromArray($this->send('GET', '/refunds/' . rawurlencode($id)));
     }
 
+    public function testConnection(): array
+    {
+        return $this->send('GET', '/me');
+    }
+
     /** @return array<string,mixed> */
     private function receipt(string $email, string $item, int $amount): array
     {

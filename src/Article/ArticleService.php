@@ -307,9 +307,9 @@ final class ArticleService
         $this->articles->syncTags($articleId, $this->tags->resolveNames(array_slice($names, 0, 15)));
         $related = array_map('intval', (array) ($input['related_ids'] ?? []));
         $this->articles->syncRelated($articleId, array_slice($related, 0, 8));
-        if (isset($input['gallery']) && is_array($input['gallery'])) {
+        if (!empty($input['gallery_present']) || (isset($input['gallery']) && is_array($input['gallery']))) {
             $items = [];
-            foreach ($input['gallery'] as $item) {
+            foreach ((array) ($input['gallery'] ?? []) as $item) {
                 if (is_array($item) && !empty($item['media_id'])) {
                     $items[] = ['media_id' => (int) $item['media_id'], 'caption' => (string) ($item['caption'] ?? '')];
                 }

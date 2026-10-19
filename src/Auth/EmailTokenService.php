@@ -30,7 +30,7 @@ final class EmailTokenService
      *
      * @param array<string,mixed> $payload
      */
-    public function create(User $user, string $type, array $payload = []): string
+    public function create(User $user, string $type, array $payload = [], ?int $ttlSeconds = null): string
     {
         $this->db->execute('DELETE FROM email_tokens WHERE user_id = :u AND type = :t AND used_at IS NULL', ['u' => $user->id, 't' => $type]);
         $token = Crypto::token(32);
@@ -39,7 +39,7 @@ final class EmailTokenService
             'type' => $type,
             'token_hash' => Crypto::hashToken($token),
             'payload' => $payload,
-            'expires_at' => new \DateTimeImmutable('+' . self::TTL[$type] . ' seconds'),
+            'expires_at' => new \DateTimeImmutable('+' . ($ttlSeconds ?? self::TTL[$type]) . ' seconds'),
         ]);
 
         return $token;
