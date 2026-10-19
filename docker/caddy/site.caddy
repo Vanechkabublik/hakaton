@@ -1,0 +1,68 @@
+# Общая часть сайта: статика, загрузки, кэш и проксирование PHP. Подключается из Caddyfile и Caddyfile.proxy.
+encode zstd gzip
+
+# Каталог public приложения смонтирован по тому же пути, что и в контейнере app
+root * /var/www/html/public
+
+request_body {
+	max_size 20MB
+}
+
+header {
+	-Server
+	-X-Powered-By
+	X-Content-Type-Options nosniff
+}
+
+# Скрытые файлы и каталоги недоступны (кроме /.well-known/)
+@dotfiles {
+	path /.*
+	not path /.well-known/*
+}
+handle @dotfiles {
+	respond 404
+}
+
+# Загрузки редакции (WebP/JPEG/PNG). sandbox в CSP исключает исполнение скриптов из SVG при прямом открытии
+handle /uploads/* {
+	uri strip_prefix /uploads
+	root * /var/www/html/storage/uploads
+	header Cache-Control "public, max-age=2592000"
+	header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+	file_server
+}
+
+# CSS/JS подключаются с ?v=<mtime>, поэтому версионированные файлы можно кэшировать навсегда
+handle /assets/* {
+	@versioned query v=*
+	header @versioned Cache-Control "public, max-age=31536000, immutable"
+	@plain {
+		not query v=*
+	}
+	header @plain Cache-Control "public, max-age=86400"
+	file_server
+}
+
+# Service Worker не должен кэшироваться, иначе обновления не доедут до пользователей
+handle /sw.js {
+	header Cache-Control "no-cache"
+	header Service-Worker-Allowed "/"
+	file_server
+}
+
+# Всё остальное — фронт-контроллер PHP
+handle {
+	php_fastcgi app:9000 {
+		root /var/www/html/public
+		# Адрес посетителя для приложения: если перед Caddy стоит доверенный прокси, берётся из X-Forwarded-For,
+		# иначе — адрес TCP-соединения. Подделать нельзя: HTTP-заголовки приходят как HTTP_*, а не CLIENT_IP.
+		env CLIENT_IP {client_ip}
+		read_timeout 300s
+		write_timeout 300s
+	}
+}
+
+log {
+	output stdout
+	format console
+}

@@ -80,16 +80,19 @@ services:
     restart: unless-stopped
     logging: *logging
     networks: [internal]
+    # HTTP_BIND/HTTPS_BIND: порт или адрес:порт на хосте. По умолчанию 80/443; в режиме «за вашим веб-сервером»
+    # (./deploy.sh --behind-proxy) — только локальные порты, чтобы не конфликтовать с другим сайтом на сервере.
+    command: ["caddy", "run", "--config", "/etc/caddy/${CADDYFILE:-Caddyfile}", "--adapter", "caddyfile"]
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTPS_PORT:-443}:443/udp"
+      - "${HTTP_BIND:-80}:80"
+      - "${HTTPS_BIND:-443}:443"
+      - "${HTTPS_BIND:-443}:443/udp"
     environment:
       DOMAIN: ${DOMAIN:?Задайте DOMAIN в .env}
       ACME_EMAIL: ${ACME_EMAIL:?Задайте ACME_EMAIL в .env}
       ACME_CA: ${ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
     volumes:
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/caddy:/etc/caddy:ro
       - ./public:/var/www/html/public:ro
       - uploads:/var/www/html/storage/uploads:ro
       - caddy_data:/data

@@ -250,9 +250,21 @@ final class Request
         return $default;
     }
 
+    /**
+     * Адрес посетителя. CLIENT_IP выставляет Caddy (параметр FastCGI): адрес из X-Forwarded-For, если перед Caddy
+     * стоит доверенный прокси, иначе адрес TCP-соединения. Подделать его HTTP-заголовком нельзя — заголовки
+     * попадают в HTTP_*, а порт php-fpm доступен только внутри сети Docker.
+     */
     public function ip(): string
     {
-        return (string) ($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
+        foreach (['CLIENT_IP', 'REMOTE_ADDR'] as $key) {
+            $ip = (string) ($this->server[$key] ?? '');
+            if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                return $ip;
+            }
+        }
+
+        return '0.0.0.0';
     }
 
     public function userAgent(): string
